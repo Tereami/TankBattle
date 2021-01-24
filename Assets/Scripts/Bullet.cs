@@ -14,7 +14,7 @@ public class Bullet : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        //if (other.tag != "Player") return;
+        //if (other.tag != "Player")dddd return;
 
         IDestroyable target = other.gameObject.GetComponentInParent<IDestroyable>();
         if (target == null)
