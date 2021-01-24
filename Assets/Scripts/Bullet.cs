@@ -5,11 +5,31 @@ using UnityEngine;
 public class Bullet : MonoBehaviour
 {
     [SerializeField] private float speed;
-    [SerializeField] private float damage;
+    [SerializeField] private int damage;
 
     private void Awake()
     {
         Destroy(gameObject, 3);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        //if (other.tag != "Player") return;
+
+        IDestroyable target = other.gameObject.GetComponentInParent<IDestroyable>();
+        if (target == null)
+        {
+            target = other.GetComponent<IDestroyable>();
+        }
+
+
+
+        if (target != null)
+        {
+            target.Damage(damage);
+            Destroy(gameObject, 0);
+            Debug.Log("Damage! Target hp:" + target.GetHP().ToString());
+        }
     }
 
     void Update()

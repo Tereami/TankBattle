@@ -2,17 +2,21 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Player : MonoBehaviour
+public class Player : MonoBehaviour, IDestroyable, IFightable
 {
+    [SerializeField] private int hp = 100;
+    [SerializeField] private int bulletsMainCount = 5;
+    [SerializeField] private int bulletsAltCount = 3;
+
     [SerializeField] private float speed = 3;
     [SerializeField] private GameObject bulletMain = null;
     [SerializeField] private GameObject bulletAlt = null;
-    [SerializeField] private Transform bulletStartPosition = null;
+    private Transform bulletStartPosition = null;
     private GameObject tower = null;
 
     private Vector3 direction = Vector3.zero;
-    private Quaternion rotation = Quaternion.identity;
-    private Vector3 towerRotation = Vector3.zero;
+    private float rotation = 0;
+    private float towerRotation = 0;
 
     private bool fireMain = false;
     private bool fireAlt = false;
@@ -23,9 +27,15 @@ public class Player : MonoBehaviour
         //MeshRenderer mesh = GetComponent<MeshRenderer>();
         //Material mat = mesh.material;
         tower = transform.GetChild(0).gameObject;
+        bulletStartPosition = tower.transform.GetChild(0);
     }
-    
 
+    void OnGUI()
+    {
+        GUI.Label(new Rect(20, 20, 400, 100), "WASD to move, QE to rotate, mouse left-right click to fire");
+        GUI.Label(new Rect(20, 40, 100, 100), "hp: " + hp.ToString());
+        GUI.Label(new Rect(20, 60, 100, 100), "ammo: " + bulletsMainCount.ToString() + "/" + bulletsAltCount.ToString());
+    }
 
     private void Update()
     {
@@ -38,10 +48,9 @@ public class Player : MonoBehaviour
             fireAlt = true;
         }
 
-        direction.x = Input.GetAxis("Horizontal");
+        rotation = Input.GetAxis("Horizontal");
         direction.z = Input.GetAxis("Vertical");
-        rotation.y = Input.GetAxis("Rotate");
-
+        towerRotation = 2 * Input.GetAxis("Rotate");
     }
 
     private void FixedUpdate()
@@ -49,17 +58,26 @@ public class Player : MonoBehaviour
         Vector3 deltaPosition = direction * speed * Time.fixedDeltaTime;
         transform.Translate(deltaPosition);
 
-        //tower.transform.ro
+        transform.Rotate(Vector3.up, rotation);
+        tower.transform.Rotate(Vector3.up, towerRotation);
 
-        Debug.Log("Delta position: " + deltaPosition.x.ToString() + ", tower rotate: " + rotation.ToString());
+        //Debug.Log("Delta position: " + deltaPosition.x.ToString() + ", tower rotate: " + rotation.ToString());
 
         if (fireMain)
         {
-            Fire(bulletMain);
+            if (bulletsMainCount > 0)
+            {
+                Fire(bulletMain);
+                bulletsMainCount--;
+            }
         }
-        else if(fireAlt)
+        if(fireAlt)
         {
-            Fire(bulletAlt);
+            if (bulletsAltCount > 0)
+            {
+                Fire(bulletAlt);
+                bulletsAltCount--;
+            }
         }
     }
 
@@ -67,7 +85,31 @@ public class Player : MonoBehaviour
     {
         fireMain = false;
         fireAlt = false;
-        GameObject bulletInstance = Instantiate(bullet, bulletStartPosition.position, Quaternion.identity);
-        bulletInstance.transform.Rotate(1, 0, 0);
+        GameObject bulletInstance = Instantiate(bullet, bulletStartPosition.position, tower.transform.rotation);
+    }
+
+    public void Damage(int value)
+    {
+        hp -= value;
+        if(hp <= 0)
+        {
+            Death();
+        }
+    }
+
+    public int GetHP()
+    {
+        return hp;
+    }
+
+    private void Death()
+    {
+        Destroy(gameObject, 0);
+    }
+
+    public void AddAmmo(int addMainAmmoCount, int addAltAmmoCount)
+    {
+        bulletsMainCount += addMainAmmoCount;
+        bulletsAltCount += addAltAmmoCount;
     }
 }
